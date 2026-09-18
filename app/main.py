@@ -14,7 +14,7 @@ from typing import List
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from .calculations import plan_totals
 from .config import SETTINGS
@@ -67,10 +67,10 @@ async def _validation_handler(request: Request, exc: RequestValidationError) -> 
 
 
 @app.get("/", include_in_schema=False)
-async def root() -> RedirectResponse:
-    """Open the interactive API page when the deployment URL is visited."""
+async def root() -> FileResponse:
+    """Serve the responsive operator workspace at the deployment root."""
 
-    return RedirectResponse(url="/docs", status_code=307)
+    return FileResponse("app/static/index.html", media_type="text/html")
 
 
 @app.get("/health", response_model=HealthResponse)

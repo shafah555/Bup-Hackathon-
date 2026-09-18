@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10251f">
+  <title>GridWise | Campus Energy Control</title>
+  <style>
+    :root {
+      --ink: #17231f;
+      --muted: #687771;
+      --paper: #f4f0e8;
+      --panel: #fffdf8;
+      --line: #d9ddd3;
+      --green: #166b50;
+      --green-dark: #0d3f32;
+      --lime: #c7e36e;
+      --orange: #e77c45;
+      --yellow: #f4c95d;
+      --shadow: 0 18px 45px rgba(30, 52, 43, .1);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 15px/1.5 "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      opacity: .42;
+      background-image: linear-gradient(rgba(22,107,80,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(22,107,80,.05) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(to bottom, black, transparent 85%);
+    }
+    .shell { width: min(1440px, calc(100% - 40px)); margin: 0 auto; }
+    header { padding: 28px 0 42px; display: flex; justify-content: space-between; align-items: end; gap: 30px; }
+    .brand { display: flex; align-items: center; gap: 13px; color: var(--green-dark); font-weight: 800; letter-spacing: .04em; }
+    .mark { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px 12px 12px 3px; color: var(--green-dark); background: var(--lime); font-size: 23px; }
+    .eyebrow { margin: 0 0 9px; color: var(--green); font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 690px; margin-bottom: 12px; font: 700 clamp(2.6rem, 5vw, 5.4rem)/.93 Georgia, serif; letter-spacing: -.04em; }
+    .intro { max-width: 610px; margin-bottom: 0; color: var(--muted); font-size: 17px; }
+    .status { display: flex; align-items: center; gap: 8px; color: var(--green); font-size: 12px; font-weight: 800; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 5px rgba(22,107,80,.12); }
+    main { display: grid; grid-template-columns: minmax(330px, .72fr) minmax(0, 1.28fr); gap: 22px; align-items: start; padding-bottom: 60px; }
+    .panel { border: 1px solid rgba(217,221,211,.9); border-radius: 18px; background: rgba(255,253,248,.9); box-shadow: var(--shadow); }
+    .controls { padding: 25px; position: sticky; top: 18px; }
+    .section-title { display: flex; justify-content: space-between; align-items: baseline; gap: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--line); }
+    h2 { margin-bottom: 0; font-size: 19px; }
+    h3 { margin: 0 0 12px; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
+    .hint { color: var(--muted); font-size: 12px; }
+    label { display: block; margin: 16px 0 7px; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    input, textarea, button { font: inherit; }
+    input, textarea { width: 100%; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: #fff; padding: 11px 12px; outline: none; }
+    input:focus, textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(22,107,80,.12); }
+    textarea { min-height: 78px; resize: vertical; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .battery { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .actions { display: flex; gap: 10px; margin-top: 22px; }
+    button { border: 0; border-radius: 9px; padding: 12px 16px; cursor: pointer; font-weight: 800; }
+    .primary { flex: 1; color: #f8fff1; background: var(--green-dark); }
+    .primary:hover { background: var(--green); }
+    .secondary { color: var(--green-dark); background: #e8efcf; }
+    button:disabled { cursor: wait; opacity: .6; }
+    .results { min-width: 0; }
+    .empty { min-height: 480px; display: grid; place-items: center; padding: 40px; text-align: center; }
+    .empty-inner { max-width: 360px; }
+    .empty-icon { width: 70px; height: 70px; display: grid; place-items: center; margin: 0 auto 18px; border-radius: 50%; color: var(--green-dark); background: var(--lime); font-size: 32px; }
+    .empty h2 { margin-bottom: 8px; font: 700 32px Georgia, serif; }
+    .empty p { color: var(--muted); }
+    .hidden { display: none !important; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    .metric { padding: 19px; border-radius: 14px; color: #f8fff1; background: var(--green-dark); }
+    .metric:nth-child(2) { color: var(--ink); background: var(--lime); }
+    .metric:nth-child(3) { color: var(--ink); background: #f1d58b; }
+    .metric small { display: block; margin-bottom: 8px; opacity: .75; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .metric strong { display: block; font: 700 29px Georgia, serif; }
+    .result-block { padding: 22px; margin-bottom: 16px; }
+    .summary { margin: 0; color: var(--muted); }
+    .directives { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+    .directive { padding: 13px; border-left: 4px solid var(--green); border-radius: 9px; background: #f1f4e9; }
+    .directive strong { display: block; margin-bottom: 3px; font-size: 12px; }
+    .directive span { color: var(--muted); font-size: 12px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; min-width: 620px; border-collapse: collapse; }
+    th { color: var(--muted); font-size: 10px; letter-spacing: .08em; text-align: left; text-transform: uppercase; }
+    th, td { padding: 11px 10px; border-bottom: 1px solid #e5e8e0; white-space: nowrap; }
+    td { font-size: 13px; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .hour { color: var(--green); font-weight: 800; }
+    .action { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; }
+    .action::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+    .charge::before { background: var(--green); }
+    .discharge::before { background: var(--orange); }
+    .error { padding: 13px 15px; margin-top: 14px; border-radius: 9px; color: #8d2c1d; background: #fbe4dc; font-size: 13px; }
+    .loading { display: inline-flex; align-items: center; gap: 8px; }
+    .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 900px) { header { display: block; padding-bottom: 28px; } .status { margin-top: 20px; } main { grid-template-columns: 1fr; } .controls { position: static; } }
+    @media (max-width: 560px) { .shell { width: min(100% - 24px, 1440px); } h1 { font-size: 3.1rem; } .metrics { grid-template-columns: 1fr; } .controls, .result-block { padding: 18px; } .grid-2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <div class="brand"><span class="mark">↯</span><span>GRIDWISE / CAMPUS CONTROL</span></div>
+        <p class="eyebrow" style="margin-top:32px">Smart dispatch workspace</p>
+        <h1>Make every kilowatt count.</h1>
+        <p class="intro">Translate operator notes into a validated, low-cost campus energy plan across the next 24 hours.</p>
+      </div>
+      <div class="status"><span class="dot"></span> API READY <a href="/docs" style="color:inherit;margin-left:8px">Docs ↗</a></div>
+    </header>
+    <main>
+      <section class="panel controls">
+        <div class="section-title"><h2>Scenario inputs</h2><span class="hint">24-hour horizon</span></div>
+        <label for="scenario">Scenario ID</label>
+        <input id="scenario" value="campus-demo-01">
+        <label for="notes">Operator notes</label>
+        <textarea id="notes">Expect an 80% reduction in rooftop solar during the 1-3 PM maintenance window.
+Keep at least 120 kWh in reserve from 6 PM until 9 PM.</textarea>
+        <div class="battery">
+          <h3>Battery configuration</h3>
+          <div class="grid-2">
+            <div><label for="capacity">Capacity (kWh)</label><input id="capacity" type="number" value="500" min="0"></div>
+            <div><label for="initial">Starting energy</label><input id="initial" type="number" value="200" min="0"></div>
+            <div><label for="minimum">Base reserve</label><input id="minimum" type="number" value="50" min="0"></div>
+            <div><label for="charge">Max charge / hour</label><input id="charge" type="number" value="100" min="0"></div>
+            <div><label for="discharge">Max discharge / hour</label><input id="discharge" type="number" value="100" min="0"></div>
+          </div>
+        </div>
+        <div class="actions"><button class="secondary" type="button" id="reset">Reset demo</button><button class="primary" type="button" id="run">Run optimization</button></div>
+        <div id="error" class="error hidden"></div>
+      </section>
+      <section class="results" aria-live="polite">
+        <div id="empty" class="panel empty"><div class="empty-inner"><div class="empty-icon">⌁</div><h2>Plan on demand</h2><p>Run the scenario to see interpreted directives, cost signals, and the full dispatch schedule.</p></div></div>
+        <div id="output" class="hidden">
+          <div class="metrics"><div class="metric"><small>Total grid</small><strong id="total-grid">—</strong><span>kWh imported</span></div><div class="metric"><small>Energy cost</small><strong id="total-cost">—</strong><span>BDT estimated</span></div><div class="metric"><small>Peak import</small><strong id="peak-grid">—</strong><span>kWh / hour</span></div></div>
+          <div class="panel result-block"><div class="section-title"><h2>Strategy readout</h2><span class="hint" id="scenario-label"></span></div><p class="summary" id="summary"></p></div>
+          <div class="panel result-block"><div class="section-title"><h2>Operator interpretation</h2><span class="hint">LLM + guardrails</span></div><div id="directives" class="directives"></div></div>
+          <div class="panel result-block"><div class="section-title"><h2>24-hour dispatch</h2><span class="hint">kWh values</span></div><div class="table-wrap"><table><thead><tr><th>Hour</th><th>Grid</th><th>Solar used</th><th>Battery</th><th>Energy after</th></tr></thead><tbody id="plan"></tbody></table></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const defaults = { scenario: 'campus-demo-01', notes: 'Expect an 80% reduction in rooftop solar during the 1-3 PM maintenance window.\nKeep at least 120 kWh in reserve from 6 PM until 9 PM.', capacity: 500, initial: 200, minimum: 50, charge: 100, discharge: 100 };
+  function hours() { return Array.from({length: 24}, (_, hour) => ({ hour, demand_kwh: hour >= 8 && hour <= 21 ? 125 : 85, solar_kwh: hour >= 7 && hour <= 17 ? Math.max(0, 120 - Math.abs(12 - hour) * 8) : 0, tariff_bdt_per_kwh: hour >= 17 && hour <= 21 ? 12 : 6 })); }
+  function reset() { Object.entries(defaults).forEach(([key, value]) => { if ($(key)) $(key).value = value; }); $('error').classList.add('hidden'); }
+  function num(id) { return Number($(id).value); }
+  function format(value) { return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
+  function render(body) {
+    $('empty').classList.add('hidden'); $('output').classList.remove('hidden');
+    $('total-grid').textContent = format(body.total_grid_kwh); $('total-cost').textContent = format(body.total_cost_bdt); $('peak-grid').textContent = format(body.peak_grid_kwh); $('scenario-label').textContent = body.scenario_id; $('summary').textContent = body.plan_summary;
+    $('directives').innerHTML = body.directive_interpretation.map(d => `<div class="directive"><strong>${d.directive_type.replaceAll('_', ' ')}</strong><span>${escapeHtml(d.explanation || 'No schedule impact.')}</span></div>`).join('');
+    $('plan').innerHTML = body.hourly_plan.map(e => `<tr><td class="hour">${String(e.hour).padStart(2, '0')}:00</td><td>${format(e.grid_kwh)}</td><td>${format(e.solar_used_kwh)}</td><td><span class="action ${e.battery_action}">${e.battery_action} ${format(e.battery_kwh)}</span></td><td>${format(e.battery_energy_after_kwh)}</td></tr>`).join('');
+  }
+  function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
+  $('reset').addEventListener('click', reset);
+  $('run').addEventListener('click', async () => {
+    const button = $('run'); const notes = $('notes').value.split('\n').map(n => n.trim()).filter(Boolean).slice(0, 3); const error = $('error');
+    error.classList.add('hidden'); button.disabled = true; button.innerHTML = '<span class="loading"><span class="spinner"></span> Solving...</span>';
+    const payload = { scenario_id: $('scenario').value.trim(), operator_notes: notes, hours: hours(), battery: { capacity_kwh: num('capacity'), initial_energy_kwh: num('initial'), minimum_energy_kwh: num('minimum'), max_charge_kwh_per_hour: num('charge'), max_discharge_kwh_per_hour: num('discharge') } };
+    try { const response = await fetch('/optimize-energy', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); const body = await response.json(); if (!response.ok) throw new Error(body.detail || 'Optimization request failed.'); render(body); }
+    catch (err) { error.textContent = err.message; error.classList.remove('hidden'); }
+    finally { button.disabled = false; button.textContent = 'Run optimization'; }
+  });
+</script>
+</body>
+</html>
