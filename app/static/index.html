@@ -9,21 +9,21 @@
     :root {
       --ink: #17231f;
       --muted: #687771;
-      --paper: #f4f0e8;
-      --panel: #fffdf8;
+      --paper: #e9eee7;
+      --panel: rgba(255, 255, 252, .94);
       --line: #d9ddd3;
       --green: #166b50;
       --green-dark: #0d3f32;
       --lime: #c7e36e;
       --orange: #e77c45;
       --yellow: #f4c95d;
-      --shadow: 0 18px 45px rgba(30, 52, 43, .1);
+      --shadow: 0 24px 70px rgba(25, 55, 44, .13), 0 2px 8px rgba(25, 55, 44, .06);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       color: var(--ink);
-      background: var(--paper);
+      background: radial-gradient(circle at 86% 4%, rgba(199,227,110,.42), transparent 24rem), var(--paper);
       font: 15px/1.5 "Trebuchet MS", "Segoe UI", sans-serif;
     }
     body::before {
@@ -37,7 +37,7 @@
       mask-image: linear-gradient(to bottom, black, transparent 85%);
     }
     .shell { width: min(1440px, calc(100% - 40px)); margin: 0 auto; }
-    header { padding: 28px 0 42px; display: flex; justify-content: space-between; align-items: end; gap: 30px; }
+    header { padding: 28px 0 42px; display: flex; justify-content: space-between; align-items: end; gap: 30px; animation: rise .65s ease both; }
     .brand { display: flex; align-items: center; gap: 13px; color: var(--green-dark); font-weight: 800; letter-spacing: .04em; }
     .mark { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px 12px 12px 3px; color: var(--green-dark); background: var(--lime); font-size: 23px; }
     .eyebrow { margin: 0 0 9px; color: var(--green); font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
@@ -45,9 +45,11 @@
     h1 { max-width: 690px; margin-bottom: 12px; font: 700 clamp(2.6rem, 5vw, 5.4rem)/.93 Georgia, serif; letter-spacing: -.04em; }
     .intro { max-width: 610px; margin-bottom: 0; color: var(--muted); font-size: 17px; }
     .status { display: flex; align-items: center; gap: 8px; color: var(--green); font-size: 12px; font-weight: 800; }
+    .status-text { transition: color .2s ease; }
+    .status-text.syncing { color: var(--orange); }
     .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 5px rgba(22,107,80,.12); }
-    main { display: grid; grid-template-columns: minmax(330px, .72fr) minmax(0, 1.28fr); gap: 22px; align-items: start; padding-bottom: 60px; }
-    .panel { border: 1px solid rgba(217,221,211,.9); border-radius: 18px; background: rgba(255,253,248,.9); box-shadow: var(--shadow); }
+    main { display: grid; grid-template-columns: minmax(330px, .72fr) minmax(0, 1.28fr); gap: 22px; align-items: start; padding-bottom: 60px; animation: rise .75s .08s ease both; }
+    .panel { border: 1px solid rgba(217,221,211,.9); border-radius: 18px; background: var(--panel); box-shadow: var(--shadow); backdrop-filter: blur(12px); }
     .controls { padding: 25px; position: sticky; top: 18px; }
     .section-title { display: flex; justify-content: space-between; align-items: baseline; gap: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--line); }
     h2 { margin-bottom: 0; font-size: 19px; }
@@ -62,7 +64,7 @@
     .battery { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
     .actions { display: flex; gap: 10px; margin-top: 22px; }
     button { border: 0; border-radius: 9px; padding: 12px 16px; cursor: pointer; font-weight: 800; }
-    .primary { flex: 1; color: #f8fff1; background: var(--green-dark); }
+    .primary { flex: 1; color: #f8fff1; background: linear-gradient(135deg, var(--green-dark), var(--green)); box-shadow: 0 8px 16px rgba(13,63,50,.18); }
     .primary:hover { background: var(--green); }
     .secondary { color: var(--green-dark); background: #e8efcf; }
     button:disabled { cursor: wait; opacity: .6; }
@@ -74,12 +76,12 @@
     .empty p { color: var(--muted); }
     .hidden { display: none !important; }
     .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
-    .metric { padding: 19px; border-radius: 14px; color: #f8fff1; background: var(--green-dark); }
+    .metric { padding: 19px; border-radius: 14px; color: #f8fff1; background: linear-gradient(145deg, #0d3f32, #166b50); box-shadow: inset 0 1px rgba(255,255,255,.14); }
     .metric:nth-child(2) { color: var(--ink); background: var(--lime); }
     .metric:nth-child(3) { color: var(--ink); background: #f1d58b; }
     .metric small { display: block; margin-bottom: 8px; opacity: .75; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
     .metric strong { display: block; font: 700 29px Georgia, serif; }
-    .result-block { padding: 22px; margin-bottom: 16px; }
+    .result-block { padding: 22px; margin-bottom: 16px; animation: rise .4s ease both; }
     .summary { margin: 0; color: var(--muted); }
     .directives { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
     .directive { padding: 13px; border-left: 4px solid var(--green); border-radius: 9px; background: #f1f4e9; }
@@ -100,6 +102,7 @@
     .loading { display: inline-flex; align-items: center; gap: 8px; }
     .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @media (max-width: 900px) { header { display: block; padding-bottom: 28px; } .status { margin-top: 20px; } main { grid-template-columns: 1fr; } .controls { position: static; } }
     @media (max-width: 560px) { .shell { width: min(100% - 24px, 1440px); } h1 { font-size: 3.1rem; } .metrics { grid-template-columns: 1fr; } .controls, .result-block { padding: 18px; } .grid-2 { grid-template-columns: 1fr; } }
   </style>
@@ -113,7 +116,7 @@
         <h1>Make every kilowatt count.</h1>
         <p class="intro">Translate operator notes into a validated, low-cost campus energy plan across the next 24 hours.</p>
       </div>
-      <div class="status"><span class="dot"></span> API READY <a href="/docs" style="color:inherit;margin-left:8px">Docs ↗</a></div>
+      <div class="status"><span class="dot"></span><span class="status-text" id="status-text">LIVE PLAN</span><a href="/docs" style="color:inherit;margin-left:8px">Docs ↗</a></div>
     </header>
     <main>
       <section class="panel controls">
@@ -142,7 +145,7 @@ Keep at least 120 kWh in reserve from 6 PM until 9 PM.</textarea>
           <div class="metrics"><div class="metric"><small>Total grid</small><strong id="total-grid">—</strong><span>kWh imported</span></div><div class="metric"><small>Energy cost</small><strong id="total-cost">—</strong><span>BDT estimated</span></div><div class="metric"><small>Peak import</small><strong id="peak-grid">—</strong><span>kWh / hour</span></div></div>
           <div class="panel result-block"><div class="section-title"><h2>Strategy readout</h2><span class="hint" id="scenario-label"></span></div><p class="summary" id="summary"></p></div>
           <div class="panel result-block"><div class="section-title"><h2>Operator interpretation</h2><span class="hint">LLM + guardrails</span></div><div id="directives" class="directives"></div></div>
-          <div class="panel result-block"><div class="section-title"><h2>24-hour dispatch</h2><span class="hint">kWh values</span></div><div class="table-wrap"><table><thead><tr><th>Hour</th><th>Grid</th><th>Solar used</th><th>Battery</th><th>Energy after</th></tr></thead><tbody id="plan"></tbody></table></div></div>
+          <div class="panel result-block"><div class="section-title"><h2>24-hour dispatch</h2><span class="hint">kWh values · updates live</span></div><div class="table-wrap"><table><thead><tr><th>Hour</th><th>Grid</th><th>Solar used</th><th>Battery</th><th>Energy after</th></tr></thead><tbody id="plan"></tbody></table></div></div>
         </div>
       </section>
     </main>
@@ -151,7 +154,8 @@ Keep at least 120 kWh in reserve from 6 PM until 9 PM.</textarea>
   const $ = (id) => document.getElementById(id);
   const defaults = { scenario: 'campus-demo-01', notes: 'Expect an 80% reduction in rooftop solar during the 1-3 PM maintenance window.\nKeep at least 120 kWh in reserve from 6 PM until 9 PM.', capacity: 500, initial: 200, minimum: 50, charge: 100, discharge: 100 };
   function hours() { return Array.from({length: 24}, (_, hour) => ({ hour, demand_kwh: hour >= 8 && hour <= 21 ? 125 : 85, solar_kwh: hour >= 7 && hour <= 17 ? Math.max(0, 120 - Math.abs(12 - hour) * 8) : 0, tariff_bdt_per_kwh: hour >= 17 && hour <= 21 ? 12 : 6 })); }
-  function reset() { Object.entries(defaults).forEach(([key, value]) => { if ($(key)) $(key).value = value; }); $('error').classList.add('hidden'); }
+  let updateTimer;
+  function reset() { Object.entries(defaults).forEach(([key, value]) => { if ($(key)) $(key).value = value; }); $('error').classList.add('hidden'); scheduleUpdate(); }
   function num(id) { return Number($(id).value); }
   function format(value) { return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
   function render(body) {
@@ -161,15 +165,19 @@ Keep at least 120 kWh in reserve from 6 PM until 9 PM.</textarea>
     $('plan').innerHTML = body.hourly_plan.map(e => `<tr><td class="hour">${String(e.hour).padStart(2, '0')}:00</td><td>${format(e.grid_kwh)}</td><td>${format(e.solar_used_kwh)}</td><td><span class="action ${e.battery_action}">${e.battery_action} ${format(e.battery_kwh)}</span></td><td>${format(e.battery_energy_after_kwh)}</td></tr>`).join('');
   }
   function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
-  $('reset').addEventListener('click', reset);
-  $('run').addEventListener('click', async () => {
+  async function runOptimization() {
     const button = $('run'); const notes = $('notes').value.split('\n').map(n => n.trim()).filter(Boolean).slice(0, 3); const error = $('error');
-    error.classList.add('hidden'); button.disabled = true; button.innerHTML = '<span class="loading"><span class="spinner"></span> Solving...</span>';
+    const status = $('status-text'); error.textContent = ''; error.classList.add('hidden'); button.disabled = true; status.textContent = 'SYNCING PLAN'; status.classList.add('syncing');
     const payload = { scenario_id: $('scenario').value.trim(), operator_notes: notes, hours: hours(), battery: { capacity_kwh: num('capacity'), initial_energy_kwh: num('initial'), minimum_energy_kwh: num('minimum'), max_charge_kwh_per_hour: num('charge'), max_discharge_kwh_per_hour: num('discharge') } };
     try { const response = await fetch('/optimize-energy', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); const body = await response.json(); if (!response.ok) throw new Error(body.detail || 'Optimization request failed.'); render(body); }
-    catch (err) { error.textContent = err.message; error.classList.remove('hidden'); }
-    finally { button.disabled = false; button.textContent = 'Run optimization'; }
-  });
+    catch (err) { error.textContent = err.message; error.classList.remove('hidden'); status.textContent = 'SYNC FAILED'; }
+    finally { button.disabled = false; button.textContent = 'Run optimization'; if (error.classList.contains('hidden')) { status.textContent = 'LIVE PLAN'; } status.classList.remove('syncing'); }
+  }
+  function scheduleUpdate() { clearTimeout(updateTimer); updateTimer = setTimeout(runOptimization, 450); }
+  $('reset').addEventListener('click', reset);
+  $('run').addEventListener('click', () => { clearTimeout(updateTimer); runOptimization(); });
+  ['scenario', 'notes', 'capacity', 'initial', 'minimum', 'charge', 'discharge'].forEach(id => $(id).addEventListener('input', scheduleUpdate));
+  runOptimization();
 </script>
 </body>
 </html>
