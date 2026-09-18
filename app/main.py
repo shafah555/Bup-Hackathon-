@@ -65,6 +65,31 @@ async def _validation_handler(request: Request, exc: RequestValidationError) -> 
     )
 
 
+@app.get("/", include_in_schema=False)
+async def root() -> JSONResponse:
+    """Lightweight landing endpoint so platform health-checks on ``/`` succeed.
+
+    Returns service metadata and pointers to the real API routes instead
+    of letting platforms (Render, Vercel) report "Not Found" for the root
+    URL. Kept outside the OpenAPI schema because it is purely informational.
+    """
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "service": "GridWise",
+            "version": app.version,
+            "status": "ok",
+            "docs": "/docs",
+            "openapi": "/openapi.json",
+            "endpoints": {
+                "health": "GET /health",
+                "optimize": "POST /optimize-energy",
+            },
+        },
+    )
+
+
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     return HealthResponse(status="ok")

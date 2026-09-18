@@ -41,7 +41,10 @@ class Settings:
     llm_provider: str = field(default_factory=lambda: (_env("LLM_PROVIDER", "openai") or "openai").lower())
     llm_model: str = field(default_factory=lambda: _env("LLM_MODEL", "gpt-4o-mini") or "gpt-4o-mini")
     llm_api_key: Optional[str] = field(default_factory=lambda: _env("LLM_API_KEY"))
-    llm_api_base: Optional[str] = field(default_factory=lambda: _env("LLM_API_BASE"))
+    # Accept either LLM_API_BASE (canonical) or LLM_BASE_URL (OpenAI SDK style).
+    llm_api_base: Optional[str] = field(
+        default_factory=lambda: _env("LLM_API_BASE") or _env("LLM_BASE_URL")
+    )
     llm_timeout_seconds: float = field(default_factory=lambda: _env_float("LLM_TIMEOUT_SECONDS", 20.0))
     llm_temperature: float = field(default_factory=lambda: _env_float("LLM_TEMPERATURE", 0.0))
 

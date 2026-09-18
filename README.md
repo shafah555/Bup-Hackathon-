@@ -230,9 +230,35 @@ LOG_LEVEL=INFO
 falls back to `no_op` for every note when the LLM call fails.  Set it to
 `false` in production to surface interpreter failures as HTTP errors.
 
+## 8. Deployment URLs
+
+This repository is a backend API. Deploy it to either Render or Vercel; you
+do not need to put the Render URL into Vercel or the Vercel URL into Render.
+The API does not read either URL, and adding them to `.env` has no effect.
+
+Use the deployed URL with these paths:
+
+* `GET https://<your-render-service>.onrender.com/health`
+* `GET https://<your-vercel-project>.vercel.app/health`
+* `POST https://<your-deployed-host>/optimize-energy`
+* `GET https://<your-deployed-host>/docs`
+
+Do not add `/api` to these paths. `/api/health` is not an application route
+and returns `{"detail":"Not Found"}`.
+
+For Render, create a Docker web service from this repository. The included
+`render.yaml` sets the Dockerfile and `/health` health check automatically.
+For Vercel, import the repository with the included `vercel.json`; the Python
+function is `api/index.py`.
+
+Set `LLM_API_KEY` and any other runtime variables in the platform's project
+environment settings. Keep secrets in the platform dashboard and in the local
+`.env`, never in committed files. If both platforms are deployed, choose one
+public API URL for your client and use that URL consistently.
+
 ---
 
-## 8. Local Quickstart
+## 9. Local Quickstart
 
 ```bash
 git clone <your-fork-url>
@@ -315,16 +341,26 @@ Coverage includes:
 ## 11. Optimization Methodology
 
 We use [PuLP](https://pypi.org/project/PuLP/) with the bundled CBC solver.
-The problem is a small (5 × 24 = 120 variables), continuous LP that solves
-in well under 1 second on commodity hardware.
+The problem is a small MILP (5 × 24 = 120 continuous variables + 24 binary
+indicators) that solves in well under 1 second on commodity hardware.
 
-* Decision variables per hour: `grid`, `solar_used`, `charge`, `discharge`,
-  `battery_energy`.
+* Continuous decision variables per hour: `grid`, `solar_used`,
+  `charge`, `discharge`, `battery_energy`.
+* Binary indicator per hour: `is_charging[h] ∈ {0,1}`.
 * Objective: minimize `sum(grid[h] * tariff[h])`.
 * Constraints encode the energy balance, solar availability, battery
   dynamics, directive constraints, and end-of-day neutrality.
-* `charge * discharge == 0` is added as a non-convex constraint to keep
-  the API's `battery_action` clean (`idle` / `charge` / `discharge`).
+* Mutual exclusivity of `charge` and `discharge` is enforced with the
+  binary indicator using big-M:
+    `charge[h]    <= max_charge    * is_charging[h]`
+    `discharge[h] <= max_discharge * (1 - is_charging[h])`
+  This keeps the model pure MILP (LP-friendly) and yields a clean
+  `battery_action` label per hour.
+
+If the LP solver reports infeasibility, a deterministic best-effort
+fallback runs (uses solar, then discharges the battery, then draws grid
+up to the per-hour cap).  `grid_kwh` is hard-clamped at zero by
+construction so the public response shape stays stable.
 
 Solar curtailment is allowed; grid export is not.
 
@@ -406,11 +442,54 @@ The server never crashes; every error path returns a structured JSON error.
 * The `LLMInterpreter` defaults to a conservative `no_op` fallback when the
   LLM is unreachable.  For a serious submission, configure `LLM_API_KEY` and
   set `OFFLINE_FALLBACK=false`.
-* PuLP/CBC solves this LP in milliseconds; if you swap in a heavier solver,
-  the `SOLVER_TIME_LIMIT_SECONDS` budget protects the 30-second SLA.
-* The `charge * discharge == 0` mutual-exclusivity constraint is added for
-  cleanliness; it slightly enlarges the LP but keeps the API response
-  deterministic in its `battery_action` labelling.
+* PuLP/CBC solves this MILP in milliseconds; if you swap in a heavier
+  solver, the `SOLVER_TIME_LIMIT_SECONDS` budget protects the SLA.
+* The `is_charging[h]` binary indicator adds 24 binaries; CBC handles
+  them trivially and the API's `battery_action` labelling stays
+  deterministic.
+* When the LP is infeasible, a deterministic best-effort fallback runs
+  so the service still returns a usable 24-entry `hourly_plan`.
+
+---
+
+## 18. Free Deployment
+
+The project is fully self-contained and deploys for **$0** on any of:
+
+| Platform | Steps |
+|---------|-------|
+| **Localhost** | `pip install -r requirements.txt && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000` |
+| **Docker** | `docker compose up --build` (Docker Desktop Community is free) |
+| **Render** | Push to GitHub → <https://render.com> → New Web Service → pick `Docker` runtime → free instance. Root directory: *(blank)*. Add `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` env vars if using an LLM. |
+| **Railway** | Push to GitHub → <https://railway.app> → Deploy from GitHub repo → auto-detects `Dockerfile` → generate domain. |
+| **Hugging Face Spaces** | Create Space with Docker SDK → push repo → free public URL. |
+
+### Free LLM providers
+
+The interpreter works **without** an LLM (deterministic fallback). For
+richer natural-language parsing, these providers offer free tiers:
+
+* **Groq** — `https://api.groq.com/openai/v1`, model `llama-3.3-70b-versatile`
+* **OpenRouter** — `https://openrouter.ai/api/v1`, free models end in `:free`
+* **Google AI Studio** — Gemini (requires a thin adapter; not pre-wired)
+
+### Render env vars to set
+
+| Key | Value |
+|-----|-------|
+| `LLM_API_KEY` | *(optional)* your key |
+| `LLM_BASE_URL` | *(optional)* `https://api.groq.com/openai/v1` |
+| `LLM_MODEL` | *(optional)* `llama-3.3-70b-versatile` |
+| `OFFLINE_FALLBACK` | `true` |
+
+The service runs fine with zero env vars set; the deterministic fallback
+interpreter keeps the API responsive even when no LLM is configured.
+
+### Render cold-start workaround
+
+Render's free tier spins down after 15 min idle.  To keep it warm, point
+a free cron job (e.g. <https://cron-job.org>) at `https://<your-app>.onrender.com/health`
+every 14 minutes.
 
 ---
 
