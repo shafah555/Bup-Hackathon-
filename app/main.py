@@ -14,7 +14,7 @@ from typing import List
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from .calculations import plan_totals
 from .config import SETTINGS
@@ -66,28 +66,10 @@ async def _validation_handler(request: Request, exc: RequestValidationError) -> 
 
 
 @app.get("/", include_in_schema=False)
-async def root() -> JSONResponse:
-    """Lightweight landing endpoint so platform health-checks on ``/`` succeed.
+async def root() -> RedirectResponse:
+    """Open the interactive API page when the deployment URL is visited."""
 
-    Returns service metadata and pointers to the real API routes instead
-    of letting platforms (Render, Vercel) report "Not Found" for the root
-    URL. Kept outside the OpenAPI schema because it is purely informational.
-    """
-
-    return JSONResponse(
-        status_code=200,
-        content={
-            "service": "GridWise",
-            "version": app.version,
-            "status": "ok",
-            "docs": "/docs",
-            "openapi": "/openapi.json",
-            "endpoints": {
-                "health": "GET /health",
-                "optimize": "POST /optimize-energy",
-            },
-        },
-    )
+    return RedirectResponse(url="/docs", status_code=307)
 
 
 @app.get("/health", response_model=HealthResponse)
