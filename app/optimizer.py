@@ -25,11 +25,7 @@ def _safe_solver_import():
 
 
 def _solve_with_pulp(pulp, pb, time_limit: float):
-    """Solve a PuLP model with the bundled CBC solver.
-
-    PuLP's CBC solver supports binary variables, which we use to enforce
-    charge/discharge mutual exclusivity per hour.  Status 1 means ``Optimal``.
-    """
+    """Solve the continuous PuLP model with the bundled CBC solver."""
     solver = pulp.PULP_CBC_CMD(
         timeLimit=max(1.0, float(time_limit)),
         msg=False,
@@ -52,6 +48,11 @@ def optimize_schedule(
         charge[h]  >= 0          battery charge
         discharge[h]>= 0         battery discharge
         b_e[h]     free          battery state of energy after hour h
+
+    Simultaneous charge and discharge are unnecessary in an optimum: reducing
+    both by the smaller amount preserves every balance and state constraint,
+    while never increasing grid cost. Keeping the model continuous avoids 24
+    binary variables and makes repeated requests substantially cheaper.
     """
     if len(hours) != 24:
         raise OptimizerError("Hours list must contain exactly 24 records")
@@ -67,13 +68,6 @@ def optimize_schedule(
     charge = [pulp.LpVariable(f"charge_{i}", lowBound=0) for i in range(24)]
     discharge = [pulp.LpVariable(f"discharge_{i}", lowBound=0) for i in range(24)]
     energy = [pulp.LpVariable(f"battery_energy_{i}", lowBound=0) for i in range(24)]
-    # Binary indicator: 1 if hour is in a charging mode. Forces mutual exclusivity
-    # of charge and discharge in an LP-friendly way (CBC handles 24 binaries easily).
-    is_charging = [
-        pulp.LpVariable(f"is_charging_{i}", lowBound=0, upBound=1, cat=pulp.LpBinary)
-        for i in range(24)
-    ]
-
     # Objective: total cost.
     pb += pulp.lpSum(grid[i] * float(sorted_hours[i].tariff_bdt_per_kwh) for i in range(24))
 
@@ -126,15 +120,6 @@ def optimize_schedule(
         i = hour_index[h]
         pb += grid[i] <= float(cap_val), f"grid_cap_{i}"
 
-    # Mutual exclusivity helper: charge and discharge cannot both be > 0 simultaneously.
-    # Modeled with a binary indicator per hour (1 == charging, 0 == discharging/idle)
-    # so charging-only and discharging-only are enforced in the LP relaxation via big-M.
-    M_charge = max_charge if max_charge > 0 else 0
-    M_discharge = max_discharge if max_discharge > 0 else 0
-    for i in range(24):
-        pb += charge[i] <= M_charge * is_charging[i], f"mutex_ch_{i}"
-        pb += discharge[i] <= M_discharge * (1 - is_charging[i]), f"mutex_dis_{i}"
-
     status = _solve_with_pulp(pulp, pb, SETTINGS.solver_time_limit_seconds)
     if status != 1:
         logger.error("optimizer_failed", extra={"status": status})
@@ -151,20 +136,10 @@ def optimize_schedule(
         c = float(charge[i].value() or 0.0)
         d = float(discharge[i].value() or 0.0)
         e_after = float(energy[i].value() or 0.0)
-        # Prefer the binary indicator when it's confident (avoids floating-point
-        # edge cases where both c and d round to 0).
-        ic_val = is_charging[i].value()
-        ic_int = int(round(ic_val)) if ic_val is not None else 0
         if c > eps and d <= eps:
             action = "charge"
             bkw = c
         elif d > eps and c <= eps:
-            action = "discharge"
-            bkw = d
-        elif ic_int == 1 and c > eps:
-            action = "charge"
-            bkw = c
-        elif ic_int == 0 and d > eps:
             action = "discharge"
             bkw = d
         else:

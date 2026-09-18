@@ -359,21 +359,18 @@ Coverage includes:
 ## 11. Optimization Methodology
 
 We use [PuLP](https://pypi.org/project/PuLP/) with the bundled CBC solver.
-The problem is a small MILP (5 × 24 = 120 continuous variables + 24 binary
-indicators) that solves in well under 1 second on commodity hardware.
+The problem is a small linear program (5 × 24 = 120 continuous variables)
+that solves quickly on commodity hardware.
 
 * Continuous decision variables per hour: `grid`, `solar_used`,
   `charge`, `discharge`, `battery_energy`.
-* Binary indicator per hour: `is_charging[h] ∈ {0,1}`.
 * Objective: minimize `sum(grid[h] * tariff[h])`.
 * Constraints encode the energy balance, solar availability, battery
   dynamics, directive constraints, and end-of-day neutrality.
-* Mutual exclusivity of `charge` and `discharge` is enforced with the
-  binary indicator using big-M:
-    `charge[h]    <= max_charge    * is_charging[h]`
-    `discharge[h] <= max_discharge * (1 - is_charging[h])`
-  This keeps the model pure MILP (LP-friendly) and yields a clean
-  `battery_action` label per hour.
+* Simultaneous charging and discharging are unnecessary in an optimum: both
+  can be reduced by the same amount without changing the state or balance,
+  and tariffs are non-negative. The returned plan therefore labels each hour
+  cleanly as charge, discharge, or idle without binary variables.
 
 If the LP solver reports infeasibility, a deterministic best-effort
 fallback runs (uses solar, then discharges the battery, then draws grid
