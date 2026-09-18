@@ -126,14 +126,11 @@ def validate_interpretation_item(item: Dict[str, Any], note_index: int) -> Direc
         )
 
     hours_field = adj_in.get("hours")
-    if not isinstance(hours_field, list) or not all(isinstance(h, int) for h in hours_field):
-        # Allow ints masquerading as floats.
+    if not isinstance(hours_field, list) or not all(isinstance(h, int) and not isinstance(h, bool) for h in hours_field):
+        # Reject fractional values and booleans; hours must be JSON integers.
         if not isinstance(hours_field, list):
             raise GuardrailError("structured_adjustment.hours must be a list", detail={"got": hours_field})
-        try:
-            hours_field = [int(h) for h in hours_field]
-        except (TypeError, ValueError) as exc:
-            raise GuardrailError("structured_adjustment.hours must be integers", detail={"got": hours_field}) from exc
+        raise GuardrailError("structured_adjustment.hours must be integers", detail={"got": hours_field})
 
     if any(h < 0 or h > 23 for h in hours_field):
         raise GuardrailError(

@@ -94,6 +94,15 @@ def test_non_finite_numbers_rejected():
         )
 
 
+def test_fractional_and_boolean_hours_rejected():
+    for hours in ([10.5], [True]):
+        with pytest.raises(GuardrailError):
+            validate_interpretation_item(
+                {"note_index": 0, "applies": True, "directive_type": "no_discharge_window", "structured_adjustment": {"hours": hours}},
+                0,
+            )
+
+
 def test_validate_full_response_requires_one_per_note():
     payload = [{"note_index": 0, "applies": True, "directive_type": "solar_reduction", "structured_adjustment": {"hours": [10], "factor": 0.5}}]
     with pytest.raises(GuardrailError):

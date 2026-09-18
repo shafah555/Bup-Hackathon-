@@ -88,6 +88,11 @@ def test_api_returns_422_on_bad_payload():
     assert resp.status_code == 422
 
 
+def test_api_returns_400_on_malformed_json():
+    resp = client.post("/optimize-energy", content="{not-json", headers={"Content-Type": "application/json"})
+    assert resp.status_code == 400
+
+
 def test_hour_field_range_enforced():
     hours = baseline_hours()
     hours[0] = {**hours[0], "hour": 24}

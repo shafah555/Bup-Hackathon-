@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import time
+from pathlib import Path
 from typing import List
 
 from fastapi import FastAPI, Request
@@ -56,8 +57,9 @@ app.add_exception_handler(Exception, unhandled_error_handler)
 @app.exception_handler(RequestValidationError)
 async def _validation_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     logger.info("request_validation_error", extra={"path": request.url.path})
+    malformed_json = any(error.get("type") == "json_invalid" for error in exc.errors())
     return JSONResponse(
-        status_code=422,
+        status_code=400 if malformed_json else 422,
         content={
             "error": "validation_error",
             "detail": "Request payload failed schema validation.",
@@ -70,7 +72,7 @@ async def _validation_handler(request: Request, exc: RequestValidationError) -> 
 async def root() -> FileResponse:
     """Serve the responsive operator workspace at the deployment root."""
 
-    return FileResponse("app/static/index.html", media_type="text/html")
+    return FileResponse(Path(__file__).resolve().parent / "static" / "index.html", media_type="text/html")
 
 
 @app.get("/health", response_model=HealthResponse)
