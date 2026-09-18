@@ -137,21 +137,10 @@ def optimize_schedule(
 
     status = _solve_with_pulp(pulp, pb, SETTINGS.solver_time_limit_seconds)
     if status != 1:
-        # Best-effort fallback: build an "honest" plan that respects
-        # non-negativity and the max_grid directive.  When demand cannot be
-        # fully met (e.g. grid capped at 0 with insufficient battery), the
-        # deficit is left as unmet demand rather than letting grid_kwh go
-        # negative.
-        logger.warning(
-            "optimizer_fallback_best_effort", extra={"status": status}
-        )
-        return _best_effort_plan(
-            sorted_hours=sorted_hours,
-            directives=directives,
-            max_charge=max_charge,
-            max_discharge=max_discharge,
-            min_energy=base_min,
-            initial_energy=initial,
+        logger.error("optimizer_failed", extra={"status": status})
+        raise OptimizerError(
+            "No valid schedule could be produced",
+            detail={"solver_status": int(status)},
         )
 
     plan: List[HourlyPlanEntry] = []

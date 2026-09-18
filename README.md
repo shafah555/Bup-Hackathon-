@@ -229,6 +229,8 @@ LOG_LEVEL=INFO
 `OFFLINE_FALLBACK` (default `true`) controls whether the interpreter
 falls back to `no_op` for every note when the LLM call fails.  Set it to
 `false` in production to surface interpreter failures as HTTP errors.
+For judging, provide a working hosted-model key and set `OFFLINE_FALLBACK=false`;
+the language model must be available for `operator_notes` interpretation.
 
 ## 8. Deployment URLs
 
@@ -307,6 +309,19 @@ docker run --env-file .env -p 8000:8000 gridwise
 curl http://localhost:8000/health
 ```
 
+The fallback image must be published by the team to a registry before
+submission. Use an immutable team-owned reference, for example:
+
+```bash
+docker build -t ghcr.io/<github-owner>/gridwise:preliminary-2026 .
+docker push ghcr.io/<github-owner>/gridwise:preliminary-2026
+docker pull ghcr.io/<github-owner>/gridwise:preliminary-2026
+docker run --rm --env-file .env -p 8000:8000 ghcr.io/<github-owner>/gridwise:preliminary-2026
+```
+
+Do not replace the placeholder with a registry reference until the image has
+actually been pushed and tested.
+
 Or:
 
 ```bash
@@ -324,6 +339,9 @@ interpreter with a deterministic stub before any test runs.
 pip install -r requirements.txt
 python -m pytest -q
 ```
+
+The repository includes `pytest.ini`, so this command runs only the tests in
+`tests/` and does not execute the network smoke script during collection.
 
 Coverage includes:
 
