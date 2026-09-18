@@ -20,6 +20,7 @@ from .calculations import plan_totals
 from .config import SETTINGS
 from .directives import MergedDirectives, describe_merged_directives, merge_directives
 from .errors import (
+    GuardrailError,
     GridWiseError,
     InterpreterError,
     OptimizerError,
@@ -114,6 +115,12 @@ async def optimize_energy(payload: OptimizeRequest) -> OptimizeResponse:
         raise
 
     merged: MergedDirectives = merge_directives(interpretations)
+    for hour, reserve in merged.battery_reserve.items():
+        if reserve > battery.capacity_kwh:
+            raise GuardrailError(
+                "minimum_battery_reserve cannot exceed battery capacity",
+                detail={"hour": hour, "reserve": reserve, "capacity": battery.capacity_kwh},
+            )
     logger.info(
         "directives_merged",
         extra={

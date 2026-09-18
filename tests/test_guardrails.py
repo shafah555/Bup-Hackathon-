@@ -62,20 +62,36 @@ def test_non_noop_applies_false_rejected():
         )
 
 
-def test_hours_normalized_and_sorted():
-    out = validate_interpretation_item(
-        {"note_index": 0, "applies": True, "directive_type": "no_discharge_window", "structured_adjustment": {"hours": [22, 18, 18, 19]}},
-        0,
-    )
-    assert out.structured_adjustment["hours"] == [18, 19, 22]
+def test_hours_must_be_unique_and_ascending():
+    with pytest.raises(GuardrailError):
+        validate_interpretation_item(
+            {"note_index": 0, "applies": True, "directive_type": "no_discharge_window", "structured_adjustment": {"hours": [22, 18, 18, 19]}},
+            0,
+        )
 
 
-def test_hours_drop_out_of_range():
-    out = validate_interpretation_item(
-        {"note_index": 0, "applies": True, "directive_type": "no_discharge_window", "structured_adjustment": {"hours": [25, 18, -1, 19]}},
-        0,
-    )
-    assert out.structured_adjustment["hours"] == [18, 19]
+def test_hours_out_of_range_rejected():
+    with pytest.raises(GuardrailError):
+        validate_interpretation_item(
+            {"note_index": 0, "applies": True, "directive_type": "no_discharge_window", "structured_adjustment": {"hours": [25, 18, 19]}},
+            0,
+        )
+
+
+def test_hours_duplicates_or_unsorted_rejected():
+    with pytest.raises(GuardrailError):
+        validate_interpretation_item(
+            {"note_index": 0, "applies": True, "directive_type": "no_discharge_window", "structured_adjustment": {"hours": [19, 18, 18]}},
+            0,
+        )
+
+
+def test_non_finite_numbers_rejected():
+    with pytest.raises(GuardrailError):
+        validate_interpretation_item(
+            {"note_index": 0, "applies": True, "directive_type": "solar_reduction", "structured_adjustment": {"hours": [10], "factor": "inf"}},
+            0,
+        )
 
 
 def test_validate_full_response_requires_one_per_note():

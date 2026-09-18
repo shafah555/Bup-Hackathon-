@@ -22,9 +22,9 @@ class HourRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     hour: int = Field(..., ge=0, le=23)
-    demand_kwh: float = Field(..., ge=0)
-    solar_kwh: float = Field(..., ge=0)
-    tariff_bdt_per_kwh: float = Field(..., ge=0)
+    demand_kwh: float = Field(..., ge=0, allow_inf_nan=False)
+    solar_kwh: float = Field(..., ge=0, allow_inf_nan=False)
+    tariff_bdt_per_kwh: float = Field(..., ge=0, allow_inf_nan=False)
 
 
 class BatteryConfig(BaseModel):
@@ -32,11 +32,11 @@ class BatteryConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    capacity_kwh: float = Field(..., ge=0)
-    initial_energy_kwh: float = Field(..., ge=0)
-    minimum_energy_kwh: float = Field(..., ge=0)
-    max_charge_kwh_per_hour: float = Field(..., ge=0)
-    max_discharge_kwh_per_hour: float = Field(..., ge=0)
+    capacity_kwh: float = Field(..., ge=0, allow_inf_nan=False)
+    initial_energy_kwh: float = Field(..., ge=0, allow_inf_nan=False)
+    minimum_energy_kwh: float = Field(..., ge=0, allow_inf_nan=False)
+    max_charge_kwh_per_hour: float = Field(..., ge=0, allow_inf_nan=False)
+    max_discharge_kwh_per_hour: float = Field(..., ge=0, allow_inf_nan=False)
 
     @model_validator(mode="after")
     def _check_invariants(self) -> "BatteryConfig":
@@ -85,13 +85,13 @@ class OptimizeRequest(BaseModel):
 class SolarReductionAdjustment(BaseModel):
     model_config = ConfigDict(extra="forbid")
     hours: List[int]
-    factor: float
+    factor: float = Field(..., allow_inf_nan=False)
 
 
 class MinimumBatteryReserveAdjustment(BaseModel):
     model_config = ConfigDict(extra="forbid")
     hours: List[int]
-    minimum_energy_kwh: float
+    minimum_energy_kwh: float = Field(..., allow_inf_nan=False)
 
 
 class NoChargeWindowAdjustment(BaseModel):
@@ -107,7 +107,7 @@ class NoDischargeWindowAdjustment(BaseModel):
 class MaxGridWindowAdjustment(BaseModel):
     model_config = ConfigDict(extra="forbid")
     hours: List[int]
-    max_grid_kwh: float
+    max_grid_kwh: float = Field(..., allow_inf_nan=False)
 
 
 StructuredAdjustment = Union[
@@ -141,11 +141,11 @@ class HourlyPlanEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     hour: int = Field(..., ge=0, le=23)
-    grid_kwh: float = Field(..., ge=0)
-    solar_used_kwh: float = Field(..., ge=0)
+    grid_kwh: float = Field(..., ge=0, allow_inf_nan=False)
+    solar_used_kwh: float = Field(..., ge=0, allow_inf_nan=False)
     battery_action: BatteryAction
-    battery_kwh: float = Field(..., ge=0)
-    battery_energy_after_kwh: float = Field(..., ge=0)
+    battery_kwh: float = Field(..., ge=0, allow_inf_nan=False)
+    battery_energy_after_kwh: float = Field(..., ge=0, allow_inf_nan=False)
 
 
 class OptimizeResponse(BaseModel):
@@ -156,9 +156,9 @@ class OptimizeResponse(BaseModel):
     scenario_id: str
     directive_interpretation: List[DirectiveInterpretation]
     hourly_plan: List[HourlyPlanEntry]
-    total_grid_kwh: float
-    total_cost_bdt: float
-    peak_grid_kwh: float
+    total_grid_kwh: float = Field(..., allow_inf_nan=False)
+    total_cost_bdt: float = Field(..., allow_inf_nan=False)
+    peak_grid_kwh: float = Field(..., allow_inf_nan=False)
     plan_summary: str
 
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 from typing import Any, Dict, List, Optional, Tuple
 
 from .calculations import normalize_hour_list
@@ -134,7 +135,17 @@ def validate_interpretation_item(item: Dict[str, Any], note_index: int) -> Direc
         except (TypeError, ValueError) as exc:
             raise GuardrailError("structured_adjustment.hours must be integers", detail={"got": hours_field}) from exc
 
-    norm_hours = normalize_hour_list(hours_field)
+    if any(h < 0 or h > 23 for h in hours_field):
+        raise GuardrailError(
+            "structured_adjustment.hours must contain only integers from 0 through 23",
+            detail={"got": hours_field},
+        )
+    if hours_field != sorted(set(hours_field)):
+        raise GuardrailError(
+            "structured_adjustment.hours must be unique and ascending",
+            detail={"got": hours_field},
+        )
+    norm_hours = hours_field
     if not norm_hours:
         raise GuardrailError(
             "structured_adjustment.hours must include at least one valid hour",
@@ -146,7 +157,7 @@ def validate_interpretation_item(item: Dict[str, Any], note_index: int) -> Direc
             factor = float(adj_in["factor"])
         except (KeyError, TypeError, ValueError) as exc:
             raise GuardrailError("solar_reduction requires factor", detail={"adj": adj_in}) from exc
-        if not (0.0 <= factor <= 1.0):
+        if not math.isfinite(factor) or not (0.0 <= factor <= 1.0):
             raise GuardrailError(
                 "solar_reduction factor must be in [0,1]",
                 detail={"factor": factor},
@@ -161,7 +172,7 @@ def validate_interpretation_item(item: Dict[str, Any], note_index: int) -> Direc
                 "minimum_battery_reserve requires minimum_energy_kwh",
                 detail={"adj": adj_in},
             ) from exc
-        if min_e < 0 or min_e != min_e:  # NaN check
+        if not math.isfinite(min_e) or min_e < 0:
             raise GuardrailError(
                 "minimum_energy_kwh must be finite and non-negative",
                 detail={"got": min_e},
@@ -179,7 +190,7 @@ def validate_interpretation_item(item: Dict[str, Any], note_index: int) -> Direc
             cap = float(adj_in["max_grid_kwh"])
         except (KeyError, TypeError, ValueError) as exc:
             raise GuardrailError("max_grid_window requires max_grid_kwh", detail={"adj": adj_in}) from exc
-        if cap < 0 or cap != cap:
+        if not math.isfinite(cap) or cap < 0:
             raise GuardrailError(
                 "max_grid_window max_grid_kwh must be finite and non-negative",
                 detail={"got": cap},
